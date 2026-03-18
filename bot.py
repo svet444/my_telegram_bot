@@ -14,7 +14,7 @@ from aiogram.enums import ParseMode
 # Твои настройки
 # ──────────────────────────────────────────────
 
-BOT_TOKEN = "8655695766:AAE2COF5mDDkCS0tx6I0fCKCe2d_ljcMyNA"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Правильный ID канала (ты подтвердил)
 CHANNEL_ID = -1002005439356

@@ -6,18 +6,37 @@ from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-# Новые импорты для правильной работы parse_mode в новых версиях aiogram
+# Импорты для parse_mode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
+# Самое важное для .env
+import os
+from dotenv import load_dotenv
+
+# Загружаем .env (на хостинге эта строка безопасна, вреда не будет)
+load_dotenv()
+
 # ──────────────────────────────────────────────
-# Твои настройки
+# Настройки — берём из .env или переменных окружения
 # ──────────────────────────────────────────────
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+if BOT_TOKEN is None:
+    raise ValueError("BOT_TOKEN не найден! Проверь файл .env или переменные окружения на хостинге")
 
-# Правильный ID канала (ты подтвердил)
-CHANNEL_ID = -1002005439356
+raw_channel_id = os.getenv("CHANNEL_ID")
+if raw_channel_id is None:
+    raise ValueError("CHANNEL_ID не найден! Проверь файл .env или переменные окружения на хостинге")
+
+try:
+    CHANNEL_ID = int(raw_channel_id)
+except ValueError:
+    raise ValueError(f"CHANNEL_ID должен быть числом, а получено: {raw_channel_id!r}")
+
+# ──────────────────────────────────────────────
+# Дальше идёт logging, bot = Bot(...) и весь остальной код без изменений
+# ──────────────────────────────────────────────
 
 # Путь к PDF (положи файл рядом с bot.py и переименуй или измени путь)
 LEAD_MAGNET_FILE = "poimi-svoi-son-za-20-minut.pdf"

@@ -1,57 +1,47 @@
 import asyncio
 import logging
 from pathlib import Path
+import os
 
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
-# Импорты для parse_mode
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-# Самое важное для .env
-import os
-from dotenv import load_dotenv
-
-# Загружаем .env (на хостинге эта строка безопасна, вреда не будет)
-load_dotenv()
-
 # ──────────────────────────────────────────────
-# Настройки — берём из .env или переменных окружения
+# Настройки — берём ТОЛЬКО из переменных окружения хостинга
 # ──────────────────────────────────────────────
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if BOT_TOKEN is None:
-    raise ValueError("BOT_TOKEN не найден! Проверь файл .env или переменные окружения на хостинге")
+    raise ValueError("BOT_TOKEN не найден в переменных окружения хостинга!")
 
 raw_channel_id = os.getenv("CHANNEL_ID")
 if raw_channel_id is None:
-    raise ValueError("CHANNEL_ID не найден! Проверь файл .env или переменные окружения на хостинге")
+    raise ValueError("CHANNEL_ID не найден в переменных окружения хостинга!")
 
 try:
     CHANNEL_ID = int(raw_channel_id)
 except ValueError:
-    raise ValueError(f"CHANNEL_ID должен быть числом, а получено: {raw_channel_id!r}")
+    raise ValueError(f"CHANNEL_ID должен быть целым числом (получено: {raw_channel_id!r})")
 
 # ──────────────────────────────────────────────
-# Дальше идёт logging, bot = Bot(...) и весь остальной код без изменений
+# Остальные настройки
 # ──────────────────────────────────────────────
 
-# Путь к PDF (положи файл рядом с bot.py и переименуй или измени путь)
 LEAD_MAGNET_FILE = "poimi-svoi-son-za-20-minut.pdf"
 
 LEAD_MAGNET_CAPTION = (
     "Вот твой PDF! 🎁\n"
     "Сон может сказать о жизни больше, чем неделя размышлений \n"
     "В этом файле — простой способ быстро понять его смысл \n\n"
-    
 )
 
 WELCOME_TEXT = (
     "<b>Привет!</b>\n\n"
     "Чтобы получить Чек-лист — нужно быть подписчиком моего канала 👇\n"
-    
 )
 
 CHANNEL_LINK = "https://t.me/masterkey444"
@@ -60,7 +50,6 @@ CHANNEL_LINK = "https://t.me/masterkey444"
 
 logging.basicConfig(level=logging.INFO)
 
-# Правильная инициализация бота с parse_mode=HTML по умолчанию
 bot = Bot(
     token=BOT_TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
@@ -81,10 +70,8 @@ def get_subscribe_keyboard():
 async def is_user_subscribed(user_id: int) -> bool:
     try:
         member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
-       # print(f"User {user_id} → статус в канале: {member.status}")
         return member.status in {"member", "administrator", "creator"}
     except Exception as e:
-       # print(f"Ошибка get_chat_member: {e}")
         logging.error(f"Ошибка проверки подписки для {user_id}: {e}")
         return False
 
@@ -109,15 +96,13 @@ async def process_check_sub(call: CallbackQuery):
     subscribed = await is_user_subscribed(user_id)
 
     if subscribed:
-        # Подписан → редактируем сообщение и отправляем файл
         await call.message.edit_text("Подписка найдена! Отправляю файл...")
         await send_lead_magnet(call.message)
     else:
-        # НЕ подписан → удаляем старое сообщение и отправляем новое
         try:
             await call.message.delete()
         except Exception:
-            pass  # если сообщение уже удалено или нет прав — игнорируем
+            pass
 
         await call.message.answer(
             "Ты ещё не подписан на канал 😕\n\n"
@@ -126,7 +111,6 @@ async def process_check_sub(call: CallbackQuery):
             disable_web_page_preview=True
         )
 
-        # Дополнительно показываем всплывающее уведомление
         await call.answer(
             "Подписка не найдена! Проверь, подписался ли ты.",
             show_alert=True
@@ -156,6 +140,8 @@ async def main():
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=True
         )
+    except Exception as e:
+        logging.error(f"Критическая ошибка в polling: {e}")
     finally:
         await bot.session.close()
 

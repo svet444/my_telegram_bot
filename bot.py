@@ -45,6 +45,8 @@ if raw_admin_id:
     except ValueError as exc:
         raise ValueError(f"ADMIN_ID must be an integer, got {raw_admin_id!r}") from exc
 
+DATABASE_PATH = os.getenv("DATABASE_PATH", "bot_data.sqlite3")
+
 
 LEAD_MAGNET_FILE = "poimi-svoi-son-za-20-minut.pdf"
 LEAD_MAGNET_CAPTION = (
@@ -71,7 +73,7 @@ bot = Bot(
 dp = Dispatcher()
 router = Router()
 dp.include_router(router)
-db = Database()
+db = Database(DATABASE_PATH)
 broadcast_states: dict[int, dict] = {}
 
 
